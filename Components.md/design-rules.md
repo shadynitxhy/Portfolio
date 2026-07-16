@@ -1,0 +1,8 @@
+- Homepage layout is locked.
+- Components must adapt to the layout.
+- Never redesign the page.
+- Parent controls positioning.
+- Child components control rendering.
+- Keep animations subtle.
+- Maintain one consistent design language.
+- Preserve performance and responsiveness.
