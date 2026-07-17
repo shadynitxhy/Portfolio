@@ -11,7 +11,7 @@ const buildingItems = ["ShipSafe AI", "AI Developer Tools", "Exploring AI Agents
 
 const socialLinks = [
   { label: "GitHub", href: "https://github.com/shadynitxhy" },
-  { label: "LinkedIn", href: "https://linkedin.com/in/shadrachpaul" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/shadrach-paul" },
 ]
 
 export default function AboutModal({ onClose }: AboutModalProps) {

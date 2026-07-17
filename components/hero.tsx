@@ -98,9 +98,24 @@ export default function Hero({ revealed = false }: { revealed?: boolean }) {
               <a href="#projects" className="text-white hover:text-white/80 transition-colors border-b border-white/30 pb-0.5">
                 View Projects
               </a>
-              <a href="/resume.pdf" className="hover:text-white/80 transition-colors">
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await fetch("/Resume.pdf")
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement("a")
+                  a.href = url
+                  a.download = "Shadrach_Paul_Resume.pdf"
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                  URL.revokeObjectURL(url)
+                }}
+                className="hover:text-white/80 transition-colors"
+              >
                 Download Resume
-              </a>
+              </button>
               <a href="https://github.com/shadynitxhy" target="_blank" rel="noopener noreferrer" className="hover:text-white/80 transition-colors">
                 GitHub
               </a>
