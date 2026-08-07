@@ -1,40 +1,50 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
-import dynamic from "next/dynamic"
 
-const AboutModal = dynamic(() => import("@/components/about-modal"), { ssr: false })
-const ContactModal = dynamic(() => import("@/components/contact-modal"), { ssr: false })
 
 const navItems = [
   { label: "Projects", href: "#projects", type: "scroll" as const },
-  { label: "About", href: "", type: "modal" as const },
-  { label: "Contact", href: "", type: "modal" as const },
+  { label: "Stack", href: "", type: "modal" as const },
+  { label: "About", href: "#about", type: "scroll" as const },
+  { label: "Contact", href: "#contact", type: "scroll" as const },
 ]
 
 export default function Navbar() {
   const [hidden, setHidden] = useState(false)
-  const hiddenRef = useRef(false)
-  const [aboutOpen, setAboutOpen] = useState(false)
-  const [contactOpen, setContactOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState("")
+  const [stackOpen, setStackOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious()
     if (previous !== undefined && latest > previous && latest > 100) {
-      if (!hiddenRef.current) {
-        hiddenRef.current = true
-        setHidden(true)
-      }
+      setHidden(true)
     } else {
-      if (hiddenRef.current) {
-        hiddenRef.current = false
-        setHidden(false)
-      }
+      setHidden(false)
     }
   })
+
+  useEffect(() => {
+    const sections = document.querySelectorAll("section[id]")
+    if (!sections.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id)
+        }
+      },
+      { rootMargin: "-40% 0px -55% 0px" }
+    )
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [])
 
   const handleScroll = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
@@ -65,62 +75,57 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center gap-7 text-[10px] tracking-[0.2em] font-medium uppercase">
           {navItems.map((item) => {
+            const isActive = activeSection === item.href.replace("#", "")
+
             if (item.type === "modal") {
-              const toggleModal = () => {
-                if (item.label === "About") setAboutOpen((p) => !p)
-                if (item.label === "Contact") setContactOpen((p) => !p)
-              }
               return (
                 <button
                   key={item.label}
-                  onClick={toggleModal}
-                  className="hover:text-white transition-colors duration-150 relative group text-white/70 uppercase"
+                  onClick={() => setStackOpen(true)}
+                  className="hover:text-white transition-colors relative group text-white/70"
                 >
                   <span className="relative flex items-center gap-1">
                     {item.label}
-                    <span className="inline-block transition-all duration-150 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
+                    <span className="inline-block transition-all duration-300 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
                       →
                     </span>
                   </span>
                 </button>
               )
             }
+
             return (
               <a
                 key={item.label}
                 href={item.href}
-                onClick={(e) => handleScroll(e, item.href!)}
-                className="hover:text-white transition-colors duration-150 relative group text-white/70"
+                onClick={(e) => handleScroll(e, item.href)}
+                className={`hover:text-white transition-colors relative group ${
+                  isActive ? "text-white" : "text-white/70"
+                }`}
               >
                 <span className="relative flex items-center gap-1">
                   {item.label}
-                  <span className="inline-block transition-all duration-150 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
+                  <span className="inline-block transition-all duration-300 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100">
                     →
                   </span>
+                  {isActive && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-px bg-current scale-x-100 transition-transform duration-300" />
+                  )}
                 </span>
               </a>
             )
           })}
 
-          <button
-            type="button"
-            onClick={() => {
-              const gmailUrl =
-                "https://mail.google.com/mail/?view=cm&fs=1&to=shadrachpaul1605@gmail.com&su=Let%27s%20Build%20Something%20Together"
-              const gmailWindow = window.open(gmailUrl, "_blank")
-              if (!gmailWindow || gmailWindow.closed) {
-                window.location.href =
-                  "mailto:shadrachpaul1605@gmail.com?subject=Let%27s%20Build%20Something%20Together"
-              }
-            }}
-            className="group flex items-center gap-2 text-[9px] tracking-[0.3em] font-mono uppercase border border-white/15 px-3 py-1.5 rounded-sm text-white/50 hover:text-white hover:border-white/30 transition-all duration-150 ml-2"
+          <a
+            href="mailto:shadrachpaul1605@gmail.com"
+            className="group flex items-center gap-2 text-[9px] tracking-[0.3em] font-mono uppercase border border-white/15 px-3 py-1.5 rounded-sm text-white/50 hover:text-white hover:border-white/30 transition-all duration-300 ml-2"
           >
             <span className="text-white/40">&gt;</span>
             <span>LET&apos;S WORK TOGETHER</span>
-            <span className="inline-block transition-transform duration-150 group-hover:translate-x-0.5">
+            <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">
               →
             </span>
-          </button>
+          </a>
         </div>
 
         <button
@@ -149,7 +154,7 @@ export default function Navbar() {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="fixed inset-y-0 right-0 z-40 w-72 bg-surface/95 backdrop-blur-2xl border-l border-white/10 flex flex-col items-start justify-center gap-8 px-12 md:hidden"
           >
             {navItems.map((item) => {
@@ -157,11 +162,7 @@ export default function Navbar() {
                 return (
                   <button
                     key={item.label}
-                    onClick={() => {
-                      if (item.label === "About") setAboutOpen((p) => !p)
-                      if (item.label === "Contact") setContactOpen((p) => !p)
-                      setMobileOpen(false)
-                    }}
+                    onClick={() => { setStackOpen(true); setMobileOpen(false) }}
                     className="text-sm tracking-[0.25em] font-medium uppercase text-white/80 hover:text-white transition-colors"
                   >
                     {item.label}
@@ -172,7 +173,7 @@ export default function Navbar() {
                 <a
                   key={item.label}
                   href={item.href}
-                  onClick={(e) => handleScroll(e, item.href!)}
+                  onClick={(e) => handleScroll(e, item.href)}
                   className="text-sm tracking-[0.25em] font-medium uppercase text-white/80 hover:text-white transition-colors"
                 >
                   {item.label}
@@ -180,31 +181,14 @@ export default function Navbar() {
               )
             })}
             <div className="w-full h-px bg-white/10 my-2" />
-            <button
-              type="button"
-              onClick={() => {
-                const gmailUrl =
-                  "https://mail.google.com/mail/?view=cm&fs=1&to=shadrachpaul1605@gmail.com&su=Let%27s%20Build%20Something%20Together"
-                const gmailWindow = window.open(gmailUrl, "_blank")
-                if (!gmailWindow || gmailWindow.closed) {
-                  window.location.href =
-                    "mailto:shadrachpaul1605@gmail.com?subject=Let%27s%20Build%20Something%20Together"
-                }
-              }}
+            <a
+              href="mailto:shadrachpaul1605@gmail.com"
               className="text-[10px] tracking-[0.3em] font-mono uppercase text-white/40 hover:text-white transition-colors"
             >
               &gt; LET&apos;S WORK TOGETHER
-            </button>
+            </a>
           </motion.div>
         )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
       </AnimatePresence>
     </>
   )

@@ -34,9 +34,9 @@ const projects: Project[] = [
     featured: true,
     status: [{ label: "FEATURED" }, { label: "UNDER DEVELOPMENT" }],
     liveHref: null,
-    githubHref: null,
+    githubHref: "https://github.com/shadynitxhy/ShipSafe-AI",
     liveLabel: "In Active Development",
-    githubLabel: "Under Production",
+    githubLabel: "GitHub",
   },
   {
     id: "revival-ministries",
