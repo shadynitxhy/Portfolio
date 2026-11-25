@@ -54,7 +54,7 @@ class Particle {
 
     const interactionRadius = 120
 
-    if (distance < interactionRadius && mouseX !== -1000 && mouseY !== -1000) {
+    if (distance > 0 && distance < interactionRadius && mouseX !== -1000 && mouseY !== -1000) {
       const forceDirectionX = dx / distance
       const forceDirectionY = dy / distance
       const force = (interactionRadius - distance) / interactionRadius
@@ -109,15 +109,17 @@ export function CursorDrivenParticleTypography({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    let animationFrameId: number
+    let animationFrameId = 0
     let particles: Particle[] = []
     let mouseX = -1000
     let mouseY = -1000
     let canvasW = 0
     let canvasH = 0
+    let isVisible = true
+    let reducedMotion = false
 
     const init = () => {
-      const dpr = window.devicePixelRatio || 1
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
 
       ctx.font = `bold ${fontSize}px ${fontFamily}`
       const lines = text.split("\n")
@@ -182,6 +184,10 @@ export function CursorDrivenParticleTypography({
     }
 
     const animate = () => {
+      if (!isVisible || reducedMotion) {
+        animationFrameId = 0
+        return
+      }
       ctx.clearRect(0, 0, canvasW, canvasH)
       for (const p of particles) {
         p.update(mouseX, mouseY)
@@ -189,6 +195,29 @@ export function CursorDrivenParticleTypography({
       }
       animationFrameId = requestAnimationFrame(animate)
     }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry?.isIntersecting ?? true
+      if (isVisible && !reducedMotion && !animationFrameId) {
+        animationFrameId = requestAnimationFrame(animate)
+      }
+    }, { rootMargin: "100px" })
+
+    observer.observe(canvas)
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+    reducedMotion = motionQuery.matches
+    const handleMotionPreference = (event: MediaQueryListEvent) => {
+      reducedMotion = event.matches
+      if (!reducedMotion && isVisible && !animationFrameId) {
+        animationFrameId = requestAnimationFrame(animate)
+      }
+      if (reducedMotion && animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = 0
+      }
+    }
+    motionQuery.addEventListener("change", handleMotionPreference)
 
     let cachedRect: DOMRect | null = null
     const handleMouseMove = (e: MouseEvent) => {
@@ -202,34 +231,43 @@ export function CursorDrivenParticleTypography({
       mouseY = -1000
     }
 
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!e.touches[0]) return
+      const rect = canvas.getBoundingClientRect()
+      mouseX = e.touches[0].clientX - rect.left
+      mouseY = e.touches[0].clientY - rect.top
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return
+      const rect = canvas.getBoundingClientRect()
+      mouseX = e.touches[0].clientX - rect.left
+      mouseY = e.touches[0].clientY - rect.top
+    }
+
     const timeoutId = setTimeout(() => {
       document.fonts.ready.then(() => {
         init()
-        animate()
+        if (!reducedMotion && isVisible) animate()
       })
     }, 50)
 
     canvas.addEventListener("mousemove", handleMouseMove)
     canvas.addEventListener("mouseleave", handleMouseLeave)
-    canvas.addEventListener("touchstart", (e) => {
-      if (!e.touches[0]) return
-      const rect = canvas.getBoundingClientRect()
-      mouseX = e.touches[0].clientX - rect.left
-      mouseY = e.touches[0].clientY - rect.top
-    })
-    canvas.addEventListener("touchmove", (e) => {
-      if (!e.touches[0]) return
-      const rect = canvas.getBoundingClientRect()
-      mouseX = e.touches[0].clientX - rect.left
-      mouseY = e.touches[0].clientY - rect.top
-    })
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: true })
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: true })
     canvas.addEventListener("touchend", handleMouseLeave)
 
     return () => {
       clearTimeout(timeoutId)
+      observer.disconnect()
+      motionQuery.removeEventListener("change", handleMotionPreference)
       canvas.removeEventListener("mousemove", handleMouseMove)
       canvas.removeEventListener("mouseleave", handleMouseLeave)
-      cancelAnimationFrame(animationFrameId)
+      canvas.removeEventListener("touchstart", handleTouchStart)
+      canvas.removeEventListener("touchmove", handleTouchMove)
+      canvas.removeEventListener("touchend", handleMouseLeave)
+      if (animationFrameId) cancelAnimationFrame(animationFrameId)
     }
   }, [
     text,

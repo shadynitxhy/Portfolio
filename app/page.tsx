@@ -1,15 +1,27 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import dynamic from "next/dynamic"
 import BackgroundEffects from "@/components/background-effects"
 import CursorSpotlight from "@/components/cursor-spotlight"
 import Navbar from "@/components/navbar"
-import Hero from "@/components/hero"
-import FeaturedProjects from "@/components/featured-projects"
-import CurvedLoop from "@/components/ui/curved-loop"
 import SectionReveal from "@/components/ui/section-reveal"
 import CinematicLoader from "@/components/ui/cinematic-loader"
 import type { TechItem } from "@/components/ui/curved-loop"
+
+const Hero = dynamic(() => import("@/components/hero"), {
+  ssr: false,
+  loading: () => <section className="h-screen w-full" aria-label="Loading hero" />,
+})
+
+const FeaturedProjects = dynamic(() => import("@/components/featured-projects"), {
+  ssr: false,
+  loading: () => <section className="min-h-[50vh] w-full" aria-label="Loading projects" />,
+})
+
+const CurvedLoop = dynamic(() => import("@/components/ui/curved-loop"), {
+  ssr: false,
+})
 
 const techs: TechItem[] = [
   {

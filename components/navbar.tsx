@@ -1,20 +1,27 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import dynamic from "next/dynamic"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
+
+const AboutModal = dynamic(() => import("@/components/about-modal"), { ssr: false })
+const ContactModal = dynamic(() => import("@/components/contact-modal"), { ssr: false })
+const StackModal = dynamic(() => import("@/components/stack-modal"), { ssr: false })
 
 
 const navItems = [
-  { label: "Projects", href: "#projects", type: "scroll" as const },
-  { label: "Stack", href: "", type: "modal" as const },
-  { label: "About", href: "#about", type: "scroll" as const },
-  { label: "Contact", href: "#contact", type: "scroll" as const },
+  { label: "PROJECTS", href: "#projects", type: "scroll" as const },
+  { label: "STACK", href: "", type: "modal" as const, modal: "stack" as const },
+  { label: "ABOUT", href: "", type: "modal" as const, modal: "about" as const },
+  { label: "CONTACT", href: "", type: "modal" as const, modal: "contact" as const },
 ]
+
+type ModalName = "stack" | "about" | "contact"
 
 export default function Navbar() {
   const [hidden, setHidden] = useState(false)
   const [activeSection, setActiveSection] = useState("")
-  const [stackOpen, setStackOpen] = useState(false)
+  const [openModal, setOpenModal] = useState<ModalName | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { scrollY } = useScroll()
 
@@ -81,7 +88,8 @@ export default function Navbar() {
               return (
                 <button
                   key={item.label}
-                  onClick={() => setStackOpen(true)}
+                  type="button"
+                  onClick={() => setOpenModal(item.modal)}
                   className="hover:text-white transition-colors relative group text-white/70"
                 >
                   <span className="relative flex items-center gap-1">
@@ -162,7 +170,8 @@ export default function Navbar() {
                 return (
                   <button
                     key={item.label}
-                    onClick={() => { setStackOpen(true); setMobileOpen(false) }}
+                    type="button"
+                    onClick={() => { setOpenModal(item.modal); setMobileOpen(false) }}
                     className="text-sm tracking-[0.25em] font-medium uppercase text-white/80 hover:text-white transition-colors"
                   >
                     {item.label}
@@ -189,6 +198,12 @@ export default function Navbar() {
             </a>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {openModal === "stack" && <StackModal onClose={() => setOpenModal(null)} />}
+        {openModal === "about" && <AboutModal onClose={() => setOpenModal(null)} />}
+        {openModal === "contact" && <ContactModal onClose={() => setOpenModal(null)} />}
       </AnimatePresence>
     </>
   )
